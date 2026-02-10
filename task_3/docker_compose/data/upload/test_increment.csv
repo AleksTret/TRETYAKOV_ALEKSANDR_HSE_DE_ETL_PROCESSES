@@ -1,0 +1,6 @@
+id,room_id/id,noted_date,temp,out/in
+inc_test_001,Room Admin,15-12-2018 10:00,35,In
+inc_test_002,Room Admin,15-12-2018 10:05,28,In
+inc_test_003,Room Admin,15-12-2018 10:10,40,Out
+inc_test_001,Room Admin,15-12-2018 10:00,35,In  # Дубль для проверки дедупликации
+inc_test_004,Room Admin,16-12-2018 11:00,22,In  # Новая дата
