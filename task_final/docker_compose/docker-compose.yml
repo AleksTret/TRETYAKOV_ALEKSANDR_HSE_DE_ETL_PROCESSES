@@ -44,7 +44,7 @@ services:
         condition: service_healthy
     environment:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
-      AIRFLOW_CONN_MONGO_DEFAULT: 'mongodb://mongodb:27017'
+      AIRFLOW_CONN_MONGO_DEFAULT: 'mongo://mongodb:27017'
       AIRFLOW_CONN_POSTGRES_ETL: 'postgresql://airflow:airflow@postgres:5432/etl_warehouse'
     volumes:
       - ./airflow/dags:/opt/airflow/dags
@@ -74,7 +74,7 @@ services:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
-      AIRFLOW_CONN_MONGO_DEFAULT: 'mongodb://mongodb:27017'
+      AIRFLOW_CONN_MONGO_DEFAULT: 'mongo://mongodb:27017'
       AIRFLOW_CONN_POSTGRES_ETL: 'postgresql://airflow:airflow@postgres:5432/etl_warehouse'
       _PIP_ADDITIONAL_REQUIREMENTS: "pymongo==4.16.0 apache-airflow-providers-mongo==4.2.2 Faker==37.12.0 pandas==2.1.4"
     volumes:
@@ -104,7 +104,7 @@ services:
         condition: service_healthy
     environment:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
-      AIRFLOW_CONN_MONGO_DEFAULT: 'mongodb://mongodb:27017'
+      AIRFLOW_CONN_MONGO_DEFAULT: 'mongo://mongodb:27017'
       AIRFLOW_CONN_POSTGRES_ETL: 'postgresql://airflow:airflow@postgres:5432/etl_warehouse'
       _PIP_ADDITIONAL_REQUIREMENTS: "pymongo==4.16.0 apache-airflow-providers-mongo==4.2.2 Faker==37.12.0 pandas==2.1.4"
     volumes:

@@ -11,8 +11,8 @@ from airflow.operators.dummy import DummyOperator
 from airflow.providers.mongo.hooks.mongo import MongoHook
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.exceptions import AirflowException
+import json 
 
-# Настройки
 default_args = {
     'owner': 'airflow',
     'start_date': datetime(2024, 1, 1),
@@ -22,22 +22,22 @@ default_args = {
     'max_retry_delay': timedelta(minutes=10),
 }
 
-# Коллекции для обработки
+# Коллекции для обработки (имена в MongoDB)
 COLLECTIONS = [
-    'user_sessions',
-    'event_logs',
-    'support_tickets',
-    'user_recommendations',
-    'moderation_queue'
+    'UserSessions',
+    'EventLogs',
+    'SupportTickets',
+    'UserRecommendations',
+    'ModerationQueue'
 ]
 
-# Соответствие коллекций и таблиц
-TABLE_NAMES = {
-    'user_sessions': 'user_sessions',
-    'event_logs': 'event_logs',
-    'support_tickets': 'support_tickets',
-    'user_recommendations': 'user_recommendations',
-    'moderation_queue': 'moderation_queue'
+# Соответствие коллекций MongoDB и таблиц PostgreSQL
+COLLECTION_TO_TABLE = {
+    'UserSessions': 'user_sessions',
+    'EventLogs': 'event_logs',
+    'SupportTickets': 'support_tickets',
+    'UserRecommendations': 'user_recommendations',
+    'ModerationQueue': 'moderation_queue'
 }
 
 def parse_iso_date(date_str):
@@ -47,25 +47,20 @@ def parse_iso_date(date_str):
     if isinstance(date_str, datetime):
         return date_str
     try:
-        # Убираем 'Z' в конце и преобразуем
         date_str = date_str.replace('Z', '+00:00')
-        return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+        return datetime.fromisoformat(date_str)
     except:
         return None
 
 def transform_user_sessions(doc):
-    """Трансформация для коллекции user_sessions"""
+    """Трансформация для коллекции UserSessions"""
     doc.pop('_id', None)
     
-    # Проверка обязательных полей
     if not doc.get('session_id') or not doc.get('user_id'):
         return None
     
-    # Преобразование дат
     doc['start_time'] = parse_iso_date(doc.get('start_time'))
     doc['end_time'] = parse_iso_date(doc.get('end_time'))
-    
-    # Значения по умолчанию
     doc['device'] = doc.get('device', 'unknown')
     doc['pages_visited'] = doc.get('pages_visited', [])
     doc['actions'] = doc.get('actions', [])
@@ -73,7 +68,7 @@ def transform_user_sessions(doc):
     return doc
 
 def transform_event_logs(doc):
-    """Трансформация для коллекции event_logs"""
+    """Трансформация для коллекции EventLogs"""
     doc.pop('_id', None)
     
     if not doc.get('event_id'):
@@ -85,7 +80,7 @@ def transform_event_logs(doc):
     return doc
 
 def transform_support_tickets(doc):
-    """Трансформация для коллекции support_tickets"""
+    """Трансформация для коллекции SupportTickets"""
     doc.pop('_id', None)
     
     if not doc.get('ticket_id') or not doc.get('user_id'):
@@ -100,7 +95,7 @@ def transform_support_tickets(doc):
     return doc
 
 def transform_user_recommendations(doc):
-    """Трансформация для коллекции user_recommendations"""
+    """Трансформация для коллекции UserRecommendations"""
     doc.pop('_id', None)
     
     if not doc.get('user_id'):
@@ -112,7 +107,7 @@ def transform_user_recommendations(doc):
     return doc
 
 def transform_moderation_queue(doc):
-    """Трансформация для коллекции moderation_queue"""
+    """Трансформация для коллекции ModerationQueue"""
     doc.pop('_id', None)
     
     if not doc.get('review_id') or not doc.get('user_id'):
@@ -126,11 +121,11 @@ def transform_moderation_queue(doc):
     return doc
 
 TRANSFORM_FUNCTIONS = {
-    'user_sessions': transform_user_sessions,
-    'event_logs': transform_event_logs,
-    'support_tickets': transform_support_tickets,
-    'user_recommendations': transform_user_recommendations,
-    'moderation_queue': transform_moderation_queue
+    'UserSessions': transform_user_sessions,
+    'EventLogs': transform_event_logs,
+    'SupportTickets': transform_support_tickets,
+    'UserRecommendations': transform_user_recommendations,
+    'ModerationQueue': transform_moderation_queue
 }
 
 def process_collection(collection_name, **context):
@@ -139,13 +134,12 @@ def process_collection(collection_name, **context):
     logger.info(f"Начало обработки коллекции {collection_name}")
     
     try:
-        # Подключение к MongoDB
         mongo_hook = MongoHook(conn_id='mongo_default')
         mongo_client = mongo_hook.get_conn()
         mongo_db = mongo_client['test']
         mongo_collection = mongo_db[collection_name]
         
-        # Получение данных из MongoDB
+        # Получение данных 
         documents = list(mongo_collection.find())
         logger.info(f"Извлечено {len(documents)} документов из {collection_name}")
         
@@ -175,8 +169,10 @@ def process_collection(collection_name, **context):
         conn = pg_hook.get_conn()
         cursor = conn.cursor()
         
+        # Получаем имя таблицы из словаря соответствия
+        table_name = COLLECTION_TO_TABLE[collection_name]
+        
         # Проверка существования таблицы
-        table_name = TABLE_NAMES[collection_name]
         cursor.execute("""
             SELECT EXISTS (
                 SELECT FROM information_schema.tables 
@@ -192,7 +188,7 @@ def process_collection(collection_name, **context):
         logger.info(f"Таблица {table_name} очищена")
         
         # Вставка данных
-        if collection_name == 'user_sessions':
+        if collection_name == 'UserSessions':
             for doc in transformed_docs:
                 cursor.execute("""
                     INSERT INTO user_sessions 
@@ -203,17 +199,18 @@ def process_collection(collection_name, **context):
                     doc['pages_visited'], doc['device'], doc['actions']
                 ))
         
-        elif collection_name == 'event_logs':
+        elif collection_name == 'EventLogs':
             for doc in transformed_docs:
                 cursor.execute("""
                     INSERT INTO event_logs 
                     (event_id, timestamp, event_type, details, loaded_at)
                     VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
                 """, (
-                    doc['event_id'], doc['timestamp'], doc['event_type'], doc['details']
+                    doc['event_id'], doc['timestamp'], doc['event_type'],
+                    json.dumps(doc['details'])  # ← преобразуем в JSON-строку
                 ))
         
-        elif collection_name == 'support_tickets':
+        elif collection_name == 'SupportTickets':
             for doc in transformed_docs:
                 cursor.execute("""
                     INSERT INTO support_tickets 
@@ -221,10 +218,11 @@ def process_collection(collection_name, **context):
                     VALUES (%s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
                 """, (
                     doc['ticket_id'], doc['user_id'], doc['status'], doc['issue_type'],
-                    doc['messages'], doc['created_at'], doc['updated_at']
+                    json.dumps(doc['messages']),  # ← преобразуем в JSON-строку
+                    doc['created_at'], doc['updated_at']
                 ))
         
-        elif collection_name == 'user_recommendations':
+        elif collection_name == 'UserRecommendations':
             for doc in transformed_docs:
                 cursor.execute("""
                     INSERT INTO user_recommendations 
@@ -234,7 +232,7 @@ def process_collection(collection_name, **context):
                     doc['user_id'], doc['recommended_products'], doc['last_updated']
                 ))
         
-        elif collection_name == 'moderation_queue':
+        elif collection_name == 'ModerationQueue':
             for doc in transformed_docs:
                 cursor.execute("""
                     INSERT INTO moderation_queue 
@@ -274,7 +272,7 @@ with DAG(
             task_id=f'process_{collection}',
             python_callable=process_collection,
             op_kwargs={'collection_name': collection},
-            trigger_rule='all_done'  # Запускать даже если предыдущие упали
+            trigger_rule='all_done'
         )
         tasks.append(task)
         

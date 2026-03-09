@@ -1,35 +1,67 @@
-```text
-task_final/
-├── docker_compose/           # все файлы внутри этой папки
-│   ├── docker-compose.yml
-│   ├── airflow/
-│   ├── postgres/
-│   ├── mongo/
-│   ├── scripts/
-│   └── data/
-└── readme.md
-```
+# Итоговое задание по модулю 3
 
-git checkout 4cc11b3
+**Выполнил - Третьяков Александр Юрьевич**
 
-Краткий план запуска:
-1. Очистить и поднять инфраструктуру:
+### Решение
+
+Используя `docker-compose.yml` файл выполним развертывание и выполним генерацию данных.
+
 ```powershell
-docker-compose down -v
+# развертывание
 docker-compose up -d
-```
-2. Сгенерировать данные:
-```powershell
+# генерация данных
 docker-compose up data-generator
+# проверка
+docker-compose ps
 ```
-3. Проверить данные в MongoDB:
+
+
+<img src="./assets/2026-03-09 131046.jpg" width="700">
+
+Проверим данные в MongoDB:
 ```powershell
 docker exec -it de-mongodb mongosh
-test> show dbs
-test> use test
-test> db.UserSessions.countDocuments()
-test> exit
+
+show dbs
+use test
+
+db.UserSessions.countDocuments()
+db.EventLogs.countDocuments()
+db.SupportTickets.countDocuments()
+db.UserRecommendations.countDocuments()
+db.ModerationQueue.countDocuments()
+
+db.stats()
+
+exit
 ```
+
+<img src="./assets/2026-03-09 131603.jpg" width="700">
+
+Проверим таблицы в `PostgreSQL` 
+
+```powershell
+docker exec -it de-postgres psql -U airflow -d etl_warehouse
+
+\dt
+
+# Подсчет в сырых таблицах
+SELECT COUNT(*) FROM user_sessions;
+SELECT COUNT(*) FROM event_logs;
+SELECT COUNT(*) FROM support_tickets;
+SELECT COUNT(*) FROM user_recommendations;
+SELECT COUNT(*) FROM moderation_queue;
+
+# Подсчет в витринах
+SELECT COUNT(*) FROM user_activity_mart;
+SELECT COUNT(*) FROM support_tickets_mart;
+```
+
+<img src="./assets/2026-03-09 132056.jpg" width="700">
+
+Зайдем в Airflow UI http://localhost:8080 и убедимся в том что `DAG` созданы
+
+<img src="./assets/2026-03-09 132202.jpg" width="900">
 
 Схема перетекания данных: MongoDB → PostgreSQL
 ```text
@@ -96,7 +128,7 @@ ModerationQueue
 | array of objects | JSONB |
 | object | JSONB |
 
-Схема DAG:
+Схема `DAG`  `mongodb_to_postgres_replication`:
 ```text
 mongodb_to_postgres_replication
 ├── start
@@ -131,8 +163,9 @@ start ──────────────┼→ process_support_tickets �
                     └→ process_moderation_queue ─┘
 ```                    
 
+Таблицы для витрин
 
-Витрина 1: Активность пользователей (на основе user_sessions)
+Активность пользователей (на основе `user_sessions`)
 
 - Количество сессий по дням/часам
 
@@ -142,7 +175,19 @@ start ──────────────┼→ process_support_tickets �
 
 - Популярные действия (из actions)
 
-Витрина 2: Эффективность поддержки (на основе support_tickets)
+Таблица `user_activity_mart`:
+
+- date (день)
+
+- total_sessions
+
+- avg_session_duration_minutes
+
+- top_pages (JSON или массив)
+
+- top_actions (JSON или массив)
+
+Витрина 2: Эффективность поддержки (на основе `support_tickets`)
 
 - Количество тикетов по статусам
 
@@ -152,7 +197,17 @@ start ──────────────┼→ process_support_tickets �
 
 - Открытые тикеты
 
-2. Структура DAG
+`support_tickets_mart`:
+
+- status
+
+- ticket_count
+
+- avg_resolution_hours
+
+- issue_type_breakdown (JSON)
+
+Структура `DAG` `analytics_marts`
 ```python
 analytics_marts
 ├── start
@@ -166,25 +221,21 @@ analytics_marts
 │   └── load
 └── end
 ```
-3. Таблицы для витрин
-user_activity_mart:
 
-- date (день)
+Выполним `DAG` репликации
 
-- total_sessions
+<img src="./assets/2026-03-09 135449.jpg" width="900">
 
-- avg_session_duration_minutes
+Проверим данные
 
-- top_pages (JSON или массив)
+```powershell
+docker exec -it de-postgres psql -U airflow -d etl_warehouse
 
-- top_actions (JSON или массив)
+SELECT COUNT(*) FROM user_sessions;
+SELECT COUNT(*) FROM event_logs;
+SELECT COUNT(*) FROM support_tickets;
+SELECT COUNT(*) FROM user_recommendations;
+SELECT COUNT(*) FROM moderation_queue;
 
-support_tickets_mart:
-
-- status
-
-- ticket_count
-
-- avg_resolution_hours
-
-- issue_type_breakdown (JSON)
+```
+<img src="./assets/2026-03-09 144644.jpg" width="900">
