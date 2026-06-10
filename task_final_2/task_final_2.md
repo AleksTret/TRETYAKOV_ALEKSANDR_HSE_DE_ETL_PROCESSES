@@ -222,3 +222,80 @@ ERROR: Unable to list clouds: rpc error: code = Unauthenticated desc = iam token
 <img src="assets/2026-06-10 170937.jpg" width="700">
 
 На этом задание 1 выполнено. 
+
+### Задание 2
+
+Задание выполняется по инструкции
+
+https://yandex.cloud/ru/docs/managed-airflow/tutorials/data-processing-automation#%D1%83%D0%BF%D1%80%D0%BE%D1%89%D0%B5%D0%BD%D0%BD%D0%B0%D1%8F-%D0%BD%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B0_2
+
+Создадим кластер Apache Hive™ Metastore
+
+<img src="assets/2026-06-10 203628.jpg" width="700">
+
+Создадим кластер  Managed Service for Apache Airflow™.
+
+<img src="assets/2026-06-10 204957.jpg" width="700">
+
+Файлы `DAG` из `task_final_2\dags\kickstarter_dag.py`
+и задания `Spark` из `task_final_2\spark_jobs\spark_agg.py`
+поместим в бакет `kickstarter-data-bucket` в каталоги `dags` и `scripts` соответственно
+
+<img src="assets/2026-06-10 205316.jpg" width="700">
+
+Откроем `UI` airflow и запустим `DAG`
+
+<img src="assets/2026-06-10 205347.jpg" width="700">
+
+Дождемся успешного выполнения `DAG`
+
+<img src="assets/2026-06-10 214531.jpg" width="700">
+
+И проверим результат в бакете
+
+<img src="assets/2026-06-10 214810.jpg" width="700">
+
+<img src="assets/2026-06-10 214911.jpg" width="700">
+
+Полученные файлы 
+`task_final_2\results\_SUCCESS` и `task_final_2\results\part-00000-782f468c-3def-4fbb-bb3d-27d108aa4da5-c000.snappy.parquet`
+
+Так же после выполнения в бакете появились логи
+
+<img src="assets/2026-06-10 215408.jpg" width="700">
+
+<img src="assets/2026-06-10 215432.jpg" width="700">
+
+<img src="assets/2026-06-10 215502.jpg" width="700">
+
+Файл `csv` из бакета обработан. Задание 2 выполено.
+
+### Задание 3
+
+### Задание 4
+
+Создадим подключение и привязку в `Yandex Query` к parquet файлу 
+полученному в задании 2.
+файл `task_final_2\results\part-00000-c481637e-b7b7-4855-b791-145755b085d1-c000.snappy.parquet` 
+
+<img src="assets/2026-06-10 222736.jpg" width="700">
+
+Проверим доступность данных
+
+<img src="assets/2026-06-10 222928.jpg" width="700">
+
+Затем создадим в `Yandex DataLens` 
+- подключение
+- датасет
+- чарт
+
+
+<img src="assets/2026-06-10 224405.jpg" width="700">
+
+<img src="assets/2026-06-10 224843.jpg" width="700">
+
+<img src="assets/2026-06-10 225127.jpg" width="700">
+
+<img src="assets/2026-06-10 225232.jpg" width="700">
+
+Данные визуализированны. Задание 4 выполнено.
