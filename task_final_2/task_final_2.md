@@ -72,9 +72,13 @@
 
 Данные можно взять здесь или подготовить их самостоятельно. Примерный объём не менее 30 Мб. Примерный формат:
 
+```text
 call_id, call_time, client_id, region_code, campaign_type, call_status, client_response, duration_sec, follow_up_required
+```
 
+```text
 call_20260501_001, 2026-05-01 11:42:15, client_4412, DE - HE, credit_card_offer, answered, interested, 184, true
+```
 
 3. Создать трансфер в Object Storage.
 
@@ -102,9 +106,13 @@ call_20260501_001, 2026-05-01 11:42:15, client_4412, DE - HE, credit_card_offer,
 
 Требуемый объём файла не менее 50 Мб. Примерная структура плоской таблицы:
 
+```text
 application_id, event_time, customer_id, region_code, product_type, requested_amount, term_months, credit_score, risk_level, decision_status, approved_amount, channel, employee_review_flag, processing_time_sec
+```
 
+```text
 app_20260501_001, 2026-05-01 09:14:22, cust_88421, DE-HE, cash_loan, 12000, 24, 734, low, approved, 12000, mobile, false, 12
+```
 
 ### Задание 3. Работа с топиками Apache Kafka® с помощью PySpark-заданий в Yandex Data Processing.
 
@@ -271,6 +279,55 @@ https://yandex.cloud/ru/docs/managed-airflow/tutorials/data-processing-automatio
 Файл `csv` из бакета обработан. Задание 2 выполено.
 
 ### Задание 3
+
+Задание 3 выполняется по инструкции
+https://yandex.cloud/ru/docs/managed-kafka/tutorials/data-processing
+
+Создадим кластер `Yandex Data Processing`
+
+<img src="assets/2026-06-11 175822.jpg" width="700">
+
+и создадим кластер `Managed Service for Apache Kafka®`
+
+<img src="assets/2026-06-11 181046.jpg" width="700">
+
+Создадим бакет и положим в него исходный `csv` файл и скрипты для записи и чтения в `Kafka`
+
+Датасет для задания использован тот же что и в первом задании
+https://www.kaggle.com/datasets/kemical/kickstarter-projects?resource=download&select=ks-projects-201801.csv
+
+<img src="assets/2026-06-11 195450.jpg" width="700">
+
+В ходе чтения, плоский `csv` файл будет записан в топик `Kafka` в виде `json` файла, а затем `json` файл будет преобразован в плоский вид.
+
+Запустим выполнения задания в `Yandex Data Processing`
+Файл задания `task_final_2\data_proc_tasks\kafka-write.py`
+Чтения задания из бакета 
+
+<img src="assets/2026-06-11 204838.jpg" width="700">
+
+После выполнения задания на чтения `csv` файла, преобразования его в `json` и записи в топики `kafka` проверия в UI `kafka` что в топиках есть данные.
+
+<img src="assets/2026-06-11 210323.jpg" width="700">
+
+<img src="assets/2026-06-11 204920.jpg" width="700">
+
+<img src="assets/2026-06-11 204938.jpg" width="700">
+
+Проверим что данные действительно представляют собой `json`
+
+<img src="assets/2026-06-11 210041.jpg" width="700">
+
+Теперь выполним чтение из `Kafka` `json` данных с преобразованием их в плоский вид.
+Выполнять будем с помощью задания, файл задания `task_final_2\data_proc_tasks\kafka-read-stream.py` находится в бакете.
+
+<img src="assets/2026-06-11 205723.jpg" width="700">
+
+После успешного выполнения, проверим результат в бакете.
+
+<img src="assets/2026-06-11 210425.jpg" width="700">
+
+На этом задание 3 выполнено.
 
 ### Задание 4
 
